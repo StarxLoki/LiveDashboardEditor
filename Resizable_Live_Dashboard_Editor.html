@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resizable Live Dashboard Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.10/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.10/codemirror.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #editor-container {
+            width: 40%;
+            height: 100%;
+            background-color: #f4f4f4;
+            border-right: 2px solid #ccc;
+            display: flex;
+            flex-direction: column;
+        }
+        #editor {
+            flex-grow: 1;
+            margin: 10px;
+            border: 1px solid #ccc;
+        }
+        #run-button {
+            margin: 10px;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #run-button:hover {
+            background-color: #218838;
+        }
+        #preview-container {
+            flex-grow: 1;
+            height: 100%;
+            background-color: #ffffff;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #resizer {
+            width: 5px;
+            background: #ccc;
+            cursor: ew-resize;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor-container">
+        <button id="run-button">Run Code</button>
+        <textarea id="editor">// Your code here...</textarea>
+    </div>
+    <div id="resizer"></div>
+    <div id="preview-container">
+        <iframe id="preview"></iframe>
+    </div>
+    <script>
+        // Initialize CodeMirror editor
+        const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+            lineNumbers: true,
+            mode: 'htmlmixed',
+            theme: 'default'
+        });
+
+        // Run the code and update the preview
+        document.getElementById('run-button').addEventListener('click', () => {
+            const iframe = document.getElementById('preview');
+            const iframeDocument = iframe.contentDocument || iframe.contentWindow.document;
+            iframeDocument.open();
+            iframeDocument.write(editor.getValue());
+            iframeDocument.close();
+        });
+
+        // Function to load uploaded file into the editor
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    editor.setValue(e.target.result);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Create a file input for loading files
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.html';
+        fileInput.style.position = 'absolute';
+        fileInput.style.top = '10px';
+        fileInput.style.right = '10px';
+        fileInput.addEventListener('change', loadFile);
+        document.body.appendChild(fileInput);
+
+        // Resizer functionality
+        const resizer = document.getElementById('resizer');
+        const editorContainer = document.getElementById('editor-container');
+        const previewContainer = document.getElementById('preview-container');
+
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'ew-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const editorWidth = e.clientX;
+            const previewWidth = window.innerWidth - editorWidth - resizer.offsetWidth;
+            if (editorWidth > 200 && previewWidth > 200) {
+                editorContainer.style.width = `${editorWidth}px`;
+                previewContainer.style.width = `${previewWidth}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+    </script>
+</body>
+</html>
